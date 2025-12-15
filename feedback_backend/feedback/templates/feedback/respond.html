@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+{% load static i18n humanize crispy_forms_tags %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">
+      <i class="fas fa-reply-all me-2 text-primary"></i>
+      {% trans "Feedback Responses" %}
+    </h2>
+    <div>
+      <a href="{% url 'feedback:feedback-list' %}" class="btn btn-outline-secondary me-2">
+        <i class="fas fa-list me-1"></i>
+        {% trans "View All Feedback" %}
+      </a>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-header bg-white">
+      <ul class="nav nav-tabs card-header-tabs" id="responseTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="view-tab" data-bs-toggle="tab" 
+                  data-bs-target="#view" type="button" role="tab" 
+                  aria-controls="view" aria-selected="true">
+            <i class="fas fa-eye me-1"></i>
+            {% trans "View Responses" %}
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="create-tab" data-bs-toggle="tab" 
+                  data-bs-target="#create" type="button" role="tab" 
+                  aria-controls="create" aria-selected="false">
+            <i class="fas fa-plus me-1"></i>
+            {% trans "Create Response" %}
+          </button>
+        </li>
+      </ul>
+    </div>
+
+    <div class="card-body">
+      <div class="tab-content" id="responseTabsContent">
+        <!-- View Responses Tab -->
+        <div class="tab-pane fade show active" id="view" role="tabpanel" aria-labelledby="view-tab">
+          {% if responses %}
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th width="15%">{% trans "Feedback ID" %}</th>
+                    <th width="40%">{% trans "Content" %}</th>
+                    <th width="20%">{% trans "Date" %}</th>
+                    <th width="25%">{% trans "Actions" %}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for response in responses %}
+                  <tr>
+                    <td>
+                      <a href="{% url 'feedback:feedback-detail' response.feedback.id %}" 
+                         class="badge bg-primary text-decoration-none">
+                        #{{ response.feedback.id }}
+                      </a>
+                    </td>
+                    <td>
+                      <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 me-3">
+                          <i class="fas fa-reply text-muted"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                          <div class="fw-semibold">{{ response.content|truncatechars:80 }}</div>
+                          <small class="text-muted">
+                            {% trans "By" %} {{ response.responder.get_full_name|default:response.responder.username }}
+                          </small>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span data-bs-toggle="tooltip" title="{{ response.created_at|date:'DATETIME_FORMAT' }}">
+                        {{ response.created_at|naturaltime }}
+                      </span>
+                    </td>
+                    <td>
+                      <div class="btn-group btn-group-sm" role="group">
+                        <a href="{% url 'feedback:response-detail' response.id %}" 
+                           class="btn btn-outline-primary" 
+                           data-bs-toggle="tooltip" 
+                           title="{% trans 'View details' %}">
+                          <i class="fas fa-eye"></i>
+                        </a>
+                        {% if request.user == response.responder or request.user.is_staff %}
+                        <a href="{% url 'feedback:response-update' response.id %}" 
+                           class="btn btn-outline-secondary" 
+                           data-bs-toggle="tooltip" 
+                           title="{% trans 'Edit response' %}">
+                          <i class="fas fa-edit"></i>
+                        </a>
+                        {% endif %}
+                      </div>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="text-center py-5">
+              <i class="far fa-comment-dots display-4 text-muted mb-3"></i>
+              <h4 class="h5 text-muted">{% trans "No responses yet" %}</h4>
+              <p class="text-muted">
+                {% trans "Create your first response using the 'Create Response' tab." %}
+              </p>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Create Response Tab -->
+        <div class="tab-pane fade" id="create" role="tabpanel" aria-labelledby="create-tab">
+          <div class="row justify-content-center">
+            <div class="col-lg-8">
+              <div class="card border-0">
+                <div class="card-body p-4">
+                  <h4 class="card-title mb-4">
+                    <i class="fas fa-plus-circle me-2 text-primary"></i>
+                    {% trans "Create New Response" %}
+                  </h4>
+                  
+                  {% if form.errors %}
+                    <div class="alert alert-danger">
+                      <i class="fas fa-exclamation-triangle me-2"></i>
+                      {% trans "Please correct the errors below." %}
+                    </div>
+                  {% endif %}
+                  
+                  <form method="POST" action="{% url 'feedback:response-create' %}" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                      {{ form.feedback|as_crispy_field }}
+                      <div class="form-text">
+                        <i class="fas fa-info-circle me-1"></i>
+                        {% trans "Select the feedback item you're responding to" %}
+                      </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                      {{ form.content|as_crispy_field }}
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                      <button type="reset" class="btn btn-outline-secondary me-md-2">
+                        <i class="fas fa-undo me-1"></i>
+                        {% trans "Reset" %}
+                      </button>
+                      <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane me-1"></i>
+                        {% trans "Submit Response" %}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+  // Enable tooltips
+  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl);
+  });
+
+  // Form validation
+  const forms = document.querySelectorAll('.needs-validation');
+  Array.from(forms).forEach(form => {
+    form.addEventListener('submit', event => {
+      if (!form.checkValidity()) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      form.classList.add('was-validated');
+    }, false);
+  });
+
+  // Tab persistence
+  const tabEls = document.querySelectorAll('button[data-bs-toggle="tab"]');
+  tabEls.forEach(tabEl => {
+    tabEl.addEventListener('click', event => {
+      localStorage.setItem('lastActiveTab', event.target.getAttribute('id'));
+    });
+  });
+
+  // Restore last active tab
+  const lastActiveTab = localStorage.getItem('lastActiveTab');
+  if (lastActiveTab) {
+    const tab = new bootstrap.Tab(document.getElementById(lastActiveTab));
+    tab.show();
+  }
+});
+</script>
+{% endblock %}

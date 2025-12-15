@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="alert alert-danger">
+        <h4 class="alert-heading">Error</h4>
+        <p>{{ error }}</p>
+        <hr>
+        <a href="{% url 'feedback:home-dashboard' %}" class="btn btn-outline-danger">
+            Return to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

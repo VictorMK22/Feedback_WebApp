@@ -1,0 +1,119 @@
+{% load static i18n %}
+
+<!-- Settings Modal -->
+<div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="settingsModalLabel">
+          <i class="fas fa-cog me-2"></i>
+          {% trans "User Settings" %}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% trans 'Close' %}"></button>
+      </div>
+     
+      <form id="settingsForm" 
+            method="post" 
+            action="{% url 'users:save_user_settings' %}"
+            data-get-settings-url="{% url 'users:get_user_settings' %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          <!-- Theme Selection -->
+          <div class="mb-4">
+            <label class="form-label">{% trans "Theme" %}</label>
+            <div class="d-flex gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="theme"
+                       id="themeLight" value="light" checked>
+                <label class="form-check-label" for="themeLight">
+                  <i class="fas fa-sun me-1"></i>
+                  {% trans "Light" %}
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="theme"
+                       id="themeDark" value="dark">
+                <label class="form-check-label" for="themeDark">
+                  <i class="fas fa-moon me-1"></i>
+                  {% trans "Dark" %}
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="theme"
+                       id="themeSystem" value="system">
+                <label class="form-check-label" for="themeSystem">
+                  <i class="fas fa-desktop me-1"></i>
+                  {% trans "System" %}
+                </label>
+              </div>
+            </div>
+          </div>
+         
+          <!-- Font Size -->
+          <div class="mb-4">
+            <label for="fontSize" class="form-label">
+              {% trans "Font Size" %}
+              <span class="badge bg-primary ms-2 font-size-preview">Aa</span>
+            </label>
+            <input type="range" class="form-range" min="12" max="20" step="4"
+                   id="fontSize" name="font_size" value="12">
+            <div class="d-flex justify-content-between">
+              <small class="text-muted">{% trans "Small" %}</small>
+              <small class="text-muted">{% trans "Medium" %}</small>
+              <small class="text-muted">{% trans "Large" %}</small>
+            </div>
+          </div>
+         
+          <!-- Language Selection -->
+          <div class="mb-4">
+            <label for="languageSelect" class="form-label">{% trans "Language" %}</label>
+            <select class="form-select" id="languageSelect" name="preferred_language">
+              <option value="en" {% if user.profile.preferred_language == 'en' %}selected{% endif %}>
+                {% trans "English" %}
+              </option>
+              <option value="es" {% if user.profile.preferred_language == 'es' %}selected{% endif %}>
+                {% trans "Spanish" %}
+              </option>
+              <option value="fr" {% if user.profile.preferred_language == 'fr' %}selected{% endif %}>
+                {% trans "French" %}
+              </option>
+              <option value="de" {% if user.profile.preferred_language == 'de' %}selected{% endif %}>
+                {% trans "German" %}
+              </option>
+            </select>
+          </div>
+         
+          <!-- Notification Preferences -->
+          <div class="mb-3">
+            <label class="form-label">{% trans "Notifications" %}</label>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="emailNotifications"
+                     name="email_notifications" checked>
+              <label class="form-check-label" for="emailNotifications">
+                {% trans "Email Notifications" %}
+              </label>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="pushNotifications"
+                     name="push_notifications" checked>
+              <label class="form-check-label" for="pushNotifications">
+                {% trans "Push Notifications" %}
+              </label>
+            </div>
+          </div>
+        </div>
+       
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times me-1"></i>
+            {% trans "Cancel" %}
+          </button>
+          <button type="submit" class="btn btn-primary" id="saveSettingsBtn">
+            <i class="fas fa-save me-1"></i>
+            {% trans "Save Changes" %}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

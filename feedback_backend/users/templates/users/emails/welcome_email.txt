@@ -1,0 +1,6 @@
+Welcome to {{ site_name }}, {{ user.username }}!
+
+Your account has been successfully created.
+Visit {{ site_url }} to get started.
+
+If you didn't request this, please ignore this email.

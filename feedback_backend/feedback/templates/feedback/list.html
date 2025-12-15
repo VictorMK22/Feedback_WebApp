@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% load static i18n humanize %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">
+      <i class="fas fa-comments me-2 text-primary"></i>
+      {% trans "Feedback Submissions" %}
+    </h2>
+    <a href="{% url 'feedback:feedback-create' %}" class="btn btn-primary">
+      <i class="fas fa-plus me-1"></i>
+      {% trans "New Feedback" %}
+    </a>
+  </div>
+
+  {% if feedback_list %}
+    <div class="row g-4">
+      {% for feedback in feedback_list %}
+      <div class="col-12">
+        <div class="card shadow-sm h-100">
+          <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <div>
+              <span class="badge bg-secondary me-2">{{ feedback.category }}</span>
+              <span class="text-muted small">
+                <i class="far fa-user me-1"></i>
+                {{ feedback.user.username }}
+              </span>
+            </div>
+            <div class="text-muted small">
+              <i class="far fa-clock me-1"></i>
+              {{ feedback.created_at|naturaltime }}
+            </div>
+          </div>
+          
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <div class="rating-display">
+                {% with ''|center:feedback.rating as range %}
+                  {% for _ in range %}
+                    <i class="fas fa-star text-warning"></i>
+                  {% endfor %}
+                {% endwith %}
+                {% with ''|center:feedback.remaining_rating as range %}
+                  {% for _ in range %}
+                    <i class="far fa-star text-warning"></i>
+                  {% endfor %}
+                {% endwith %}
+                <span class="ms-2 small text-muted">({{ feedback.rating }}/5)</span>
+              </div>
+              
+              {% if feedback.status %}
+                <span class="badge bg-{{ feedback.status_color }}">
+                  {{ feedback.status }}
+                </span>
+              {% endif %}
+            </div>
+            
+            <div class="feedback-content mb-3">
+              <p class="mb-0">{{ feedback.content|linebreaksbr }}</p>
+            </div>
+            
+            {% if feedback.attachments %}
+              <div class="attachments-section border-top pt-3">
+                <h6 class="small text-muted mb-2">
+                  <i class="fas fa-paperclip me-1"></i>
+                  {% trans "Attachments" %} ({{ feedback.attachments|length }})
+                </h6>
+                <div class="d-flex flex-wrap gap-2">
+                  {% for attachment_path in feedback.attachments %}
+                  <a href="{{ MEDIA_URL }}{{ attachment_path }}" 
+                    target="_blank" 
+                    class="btn btn-sm btn-outline-secondary d-flex align-items-center">
+                    {% if ".pdf" in attachment_path %}
+                      <i class="fas fa-file-pdf text-danger me-2"></i>
+                    {% else %}
+                      <i class="fas fa-file-image text-primary me-2"></i>
+                    {% endif %}
+                    <span class="text-truncate" style="max-width: 120px;">
+                      {{ attachment_path|slice:"-30:" }}
+                    </span>
+                  </a>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+          </div>
+          
+          <div class="card-footer bg-white d-flex justify-content-end">
+            <a href="{% url 'feedback:feedback-detail' feedback.pk %}" 
+               class="btn btn-sm btn-outline-primary me-2">
+              <i class="far fa-eye me-1"></i>
+              {% trans "Details" %}
+            </a>
+            {% if request.user == feedback.user %}
+            <a href="{% url 'feedback:feedback-update' feedback.pk %}" 
+               class="btn btn-sm btn-outline-secondary">
+              <i class="far fa-edit me-1"></i>
+              {% trans "Edit" %}
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="text-center py-5">
+      <div class="card shadow-sm">
+        <div class="card-body py-5">
+          <i class="far fa-comment-dots display-4 text-muted mb-4"></i>
+          <h3 class="h4 text-muted">{% trans "No feedback submissions yet" %}</h3>
+          <p class="text-muted mb-4">
+            {% trans "Be the first to share your thoughts and suggestions." %}
+          </p>
+          <a href="{% url 'feedback:feedback-create' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>
+            {% trans "Submit Feedback" %}
+          </a>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+  
+  {% if is_paginated %}
+  <nav aria-label="Feedback pagination" class="mt-4">
+    <ul class="pagination justify-content-center">
+      {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page=1" aria-label="First">
+            <span aria-hidden="true">&laquo;&laquo;</span>
+          </a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+            <span aria-hidden="true">&laquo;</span>
+          </a>
+        </li>
+      {% endif %}
+      
+      {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+          <li class="page-item active">
+            <span class="page-link">{{ num }}</span>
+          </li>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+          </li>
+        {% endif %}
+      {% endfor %}
+      
+      {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+            <span aria-hidden="true">&raquo;</span>
+          </a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+            <span aria-hidden="true">&raquo;&raquo;</span>
+          </a>
+        </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .rating-display {
+    font-size: 1.1rem;
+    line-height: 1;
+  }
+  
+  .feedback-content {
+    white-space: pre-line;
+  }
+  
+  .card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+  }
+</style>
+{% endblock %}

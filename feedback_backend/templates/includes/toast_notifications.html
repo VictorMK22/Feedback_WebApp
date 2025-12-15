@@ -1,0 +1,141 @@
+{% load static i18n %}
+
+<!-- Toast Notifications Container -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
+  <!-- Success Toast Template -->
+  <div id="successToast" class="toast align-items-center text-white bg-success border-0" 
+       role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body">
+        <i class="fas fa-check-circle me-2"></i>
+        <span class="toast-message"></span>
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" 
+              data-bs-dismiss="toast" aria-label="{% trans 'Close' %}"></button>
+    </div>
+  </div>
+  
+  <!-- Error Toast Template -->
+  <div id="errorToast" class="toast align-items-center text-white bg-danger border-0" 
+       role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        <span class="toast-message"></span>
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" 
+              data-bs-dismiss="toast" aria-label="{% trans 'Close' %}"></button>
+    </div>
+  </div>
+  
+  <!-- Warning Toast Template -->
+  <div id="warningToast" class="toast align-items-center text-white bg-warning border-0" 
+       role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <span class="toast-message"></span>
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" 
+              data-bs-dismiss="toast" aria-label="{% trans 'Close' %}"></button>
+    </div>
+  </div>
+  
+  <!-- Info Toast Template -->
+  <div id="infoToast" class="toast align-items-center text-white bg-info border-0" 
+       role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body">
+        <i class="fas fa-info-circle me-2"></i>
+        <span class="toast-message"></span>
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" 
+              data-bs-dismiss="toast" aria-label="{% trans 'Close' %}"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Toast notification function
+function showToast(message, type = 'success', duration = 5000) {
+  const toastContainer = document.querySelector('.toast-container') || 
+    document.querySelector('.position-fixed.bottom-0.end-0');
+  
+  if (!toastContainer) return;
+  
+  // Clone the appropriate toast template
+  let toastEl;
+  switch(type) {
+    case 'error':
+      toastEl = document.getElementById('errorToast').cloneNode(true);
+      break;
+    case 'warning':
+      toastEl = document.getElementById('warningToast').cloneNode(true);
+      break;
+    case 'info':
+      toastEl = document.getElementById('infoToast').cloneNode(true);
+      break;
+    default:
+      toastEl = document.getElementById('successToast').cloneNode(true);
+  }
+  
+  // Set the message and make visible
+  toastEl.querySelector('.toast-message').textContent = message;
+  toastEl.id = '';
+  toastEl.style.display = 'block';
+  toastContainer.appendChild(toastEl);
+  
+  // Initialize and show the toast
+  const toast = new bootstrap.Toast(toastEl, {
+    autohide: true,
+    delay: duration
+  });
+  toast.show();
+  
+  // Remove toast after it's hidden
+  toastEl.addEventListener('hidden.bs.toast', function() {
+    toastEl.remove();
+  });
+}
+
+// Make function available globally
+window.showToast = showToast;
+
+// Auto-show any messages passed from Django
+document.addEventListener('DOMContentLoaded', function() {
+  {% if messages %}
+    {% for message in messages %}
+      showToast("{{ message|escapejs }}", "{{ message.tags|default:'info' }}");
+    {% endfor %}
+  {% endif %}
+});
+</script>
+
+<style>
+.toast {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  backdrop-filter: blur(10px);
+  background-color: rgba(var(--bs-success-rgb), 0.85) !important;
+}
+
+.toast.bg-danger {
+  background-color: rgba(var(--bs-danger-rgb), 0.85) !important;
+}
+
+.toast.bg-warning {
+  background-color: rgba(var(--bs-warning-rgb), 0.85) !important;
+}
+
+.toast.bg-info {
+  background-color: rgba(var(--bs-info-rgb), 0.85) !important;
+}
+
+.toast-body {
+  padding: 0.75rem 1rem;
+}
+
+.btn-close {
+  font-size: 0.75rem;
+}
+</style>

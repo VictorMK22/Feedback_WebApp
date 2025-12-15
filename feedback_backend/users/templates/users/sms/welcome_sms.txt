@@ -1,0 +1,1 @@
+Welcome to {{ site_name }}! Acct created for {{ user.username }}. Visit {{ site_url }} to start. Reply STOP to unsubscribe.

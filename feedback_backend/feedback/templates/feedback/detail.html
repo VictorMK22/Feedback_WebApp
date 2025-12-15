@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% load static i18n humanize %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">
+      <i class="fas fa-comment-dots me-2 text-primary"></i>
+      {% trans "Feedback Details" %}
+    </h2>
+    <div>
+      <a href="{% url 'feedback:feedback-list' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i>
+        {% trans "Back to List" %}
+      </a>
+      {% if request.user == feedback.user %}
+      <a href="{% url 'feedback:feedback-update' feedback.pk %}" class="btn btn-primary">
+        <i class="far fa-edit me-1"></i>
+        {% trans "Edit" %}
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <!-- Main Feedback Card -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <span class="badge bg-secondary me-2">{{ feedback.category }}</span>
+              <span class="text-muted small">
+                <i class="far fa-user me-1"></i>
+                {{ feedback.user.username }}
+              </span>
+            </div>
+            <div class="text-muted small">
+              <i class="far fa-calendar me-1"></i>
+              {{ feedback.created_at|date:"F d, Y" }}
+              <span class="ms-2">
+                <i class="far fa-clock me-1"></i>
+                {{ feedback.created_at|time:"g:i A" }}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <!-- Rating -->
+          <div class="mb-4">
+            <h6 class="text-muted mb-2">{% trans "Rating" %}</h6>
+            <div class="rating-display">
+              {% with ''|center:feedback.rating as range %}
+                {% for _ in range %}
+                  <i class="fas fa-star text-warning"></i>
+                {% endfor %}
+              {% endwith %}
+              {% with ''|center:feedback.remaining_rating as range %}
+                {% for _ in range %}
+                  <i class="far fa-star text-warning"></i>
+                {% endfor %}
+              {% endwith %}
+              <span class="ms-2 text-muted">({{ feedback.rating }}/5)</span>
+            </div>
+          </div>
+
+          <!-- Content -->
+          <div class="mb-4">
+            <h6 class="text-muted mb-2">{% trans "Feedback Content" %}</h6>
+            <div class="feedback-content">
+              {{ feedback.content|linebreaksbr }}
+            </div>
+          </div>
+
+          <!-- Attachments -->
+          {% if feedback.attachments %}
+          <div class="mb-4">
+            <h6 class="text-muted mb-2">
+              <i class="fas fa-paperclip me-1"></i>
+              {% trans "Attachments" %} ({{ feedback.attachments|length }})
+            </h6>
+            <div class="d-flex flex-wrap gap-2">
+              {% for attachment_path in feedback.attachments %}
+              <a href="{{ MEDIA_URL }}{{ attachment_path }}" 
+                 target="_blank" 
+                 class="btn btn-outline-secondary d-flex align-items-center">
+                {% if ".pdf" in attachment_path %}
+                  <i class="fas fa-file-pdf text-danger me-2"></i>
+                {% else %}
+                  <i class="fas fa-file-image text-primary me-2"></i>
+                {% endif %}
+                <span class="text-truncate" style="max-width: 200px;">
+                  {{ attachment_path|slice:"-30:" }}
+                </span>
+              </a>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Status -->
+          <div>
+            <h6 class="text-muted mb-2">{% trans "Status" %}</h6>
+            <span class="badge bg-{{ feedback.status_color }} fs-6">
+              {{ feedback.status }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Responses Section -->
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <h5 class="mb-0">
+            <i class="fas fa-reply me-2"></i>
+            {% trans "Responses" %} ({{ responses.count }})
+          </h5>
+        </div>
+        <div class="card-body">
+          {% if responses %}
+            {% for response in responses %}
+            <div class="response-item {% if not forloop.last %}border-bottom pb-3 mb-3{% endif %}">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                  <strong>
+                    <i class="fas fa-user-tie me-1 text-primary"></i>
+                    {{ response.responder.username }}
+                  </strong>
+                  <span class="badge bg-info ms-2">{{ response.responder.role }}</span>
+                </div>
+                <small class="text-muted">
+                  {{ response.created_at|naturaltime }}
+                </small>
+              </div>
+              <div class="response-content ms-4">
+                {{ response.content|linebreaksbr }}
+              </div>
+              {% if response.updated_at != response.created_at %}
+              <small class="text-muted ms-4">
+                <i class="fas fa-edit me-1"></i>
+                {% trans "Edited" %} {{ response.updated_at|naturaltime }}
+              </small>
+              {% endif %}
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="text-center py-4">
+              <i class="far fa-comment-slash display-4 text-muted mb-3"></i>
+              <p class="text-muted">{% trans "No responses yet" %}</p>
+            </div>
+          {% endif %}
+
+          {% if request.user.role == 'Admin' %}
+          <div class="mt-4 pt-3 border-top">
+            <a href="{% url 'feedback:response-create' feedback.pk %}" class="btn btn-primary">
+              <i class="fas fa-reply me-1"></i>
+              {% trans "Add Response" %}
+            </a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+          <h6 class="mb-0">{% trans "Feedback Information" %}</h6>
+        </div>
+        <div class="card-body">
+          <ul class="list-unstyled mb-0">
+            <li class="mb-3">
+              <small class="text-muted d-block">{% trans "Submitted by" %}</small>
+              <strong>{{ feedback.user.get_full_name|default:feedback.user.username }}</strong>
+            </li>
+            <li class="mb-3">
+              <small class="text-muted d-block">{% trans "Category" %}</small>
+              <strong>{{ feedback.category }}</strong>
+            </li>
+            <li class="mb-3">
+              <small class="text-muted d-block">{% trans "Status" %}</small>
+              <span class="badge bg-{{ feedback.status_color }}">{{ feedback.status }}</span>
+            </li>
+            <li class="mb-3">
+              <small class="text-muted d-block">{% trans "Created" %}</small>
+              <strong>{{ feedback.created_at|date:"M d, Y g:i A" }}</strong>
+            </li>
+            <li>
+              <small class="text-muted d-block">{% trans "Feedback ID" %}</small>
+              <strong>#{{ feedback.id }}</strong>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      {% if request.user == feedback.user %}
+      <div class="card shadow-sm border-danger">
+        <div class="card-header bg-white">
+          <h6 class="mb-0 text-danger">{% trans "Danger Zone" %}</h6>
+        </div>
+        <div class="card-body">
+          <p class="small text-muted mb-3">
+            {% trans "Once you delete your feedback, there is no going back." %}
+          </p>
+          <button type="button" class="btn btn-outline-danger w-100" data-bs-toggle="modal" data-bs-target="#deleteModal">
+            <i class="fas fa-trash me-1"></i>
+            {% trans "Delete Feedback" %}
+          </button>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+{% if request.user == feedback.user %}
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteModalLabel">{% trans "Confirm Deletion" %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>{% trans "Are you sure you want to delete this feedback? This action cannot be undone." %}</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+        <form method="post" action="{% url 'feedback:feedback-delete' feedback.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">{% trans "Delete" %}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .rating-display {
+    font-size: 1.5rem;
+  }
+  
+  .feedback-content {
+    white-space: pre-line;
+    line-height: 1.6;
+  }
+  
+  .response-content {
+    white-space: pre-line;
+    line-height: 1.6;
+  }
+  
+  .response-item {
+    animation: fadeIn 0.3s ease-in;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
+{% endblock %}

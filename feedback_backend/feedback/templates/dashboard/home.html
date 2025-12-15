@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+{% load static i18n %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
+<style>
+  :root {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --card-shadow: 0 10px 30px -15px rgba(0,0,0,0.1);
+    --hover-transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
+  
+  .dashboard-header {
+    background: var(--primary-gradient);
+    border-radius: 12px;
+    color: white;
+  }
+  
+  .metric-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    transition: var(--hover-transition);
+  }
+  
+  .metric-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px -10px rgba(0,0,0,0.15);
+  }
+  
+  .feedback-card {
+    border-left: 4px solid;
+    transition: var(--hover-transition);
+  }
+  
+  .feedback-card:hover {
+    transform: translateX(5px);
+  }
+  
+  .category-general { border-color: #4e73df; }
+  .category-bug { border-color: #e74a3b; }
+  .category-suggestion { border-color: #1cc88a; }
+  
+  .bg-general-subtle { background-color: #e0e6ff; }
+  .bg-bug-subtle { background-color: #fde8e8; }
+  .bg-suggestion-subtle { background-color: #e0f7ed; }
+  
+  .text-general-emphasis { color: #2c4ed2; }
+  .text-bug-emphasis { color: #c72a1d; }
+  .text-suggestion-emphasis { color: #0daa70; }
+  
+  .notification-dot {
+    width: 10px;
+    height: 10px;
+    background: #f6c23e;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  
+  .empty-state {
+    opacity: 0.7;
+    transition: var(--hover-transition);
+  }
+  
+  .empty-state:hover {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+  
+  .role-badge {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+  }
+  
+  .role-patient {
+    background-color: #e3f2fd;
+    color: #1565c0;
+  }
+  
+  .role-admin {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+  }
+  
+  .attachment-badge {
+    font-size: 0.7rem;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <!-- Header with Metrics -->
+  <div class="dashboard-header p-4 mb-4 animate__animated animate__fadeIn">
+    <div class="row align-items-center">
+      <div class="col-md-6 d-flex align-items-center">
+        {% if profile_image_url %}
+          <img src="{{ profile_image_url }}" alt="Profile" class="rounded-circle me-3" width="90" height="90">
+        {% else %}
+          <div class="bg-white bg-opacity-20 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 90px; height: 90px;">
+            <i class="fas fa-user-circle fs-1 text-white"></i>
+          </div>
+        {% endif %}
+        <div>
+          <h1 class="h3 mb-1">Welcome back, {{ username }}</h1>
+          <p class="mb-0 opacity-75">{% now "l, F jS" %}</p>
+          <span class="badge role-badge role-{{ user.role|lower }} mt-1">
+            {{ user.get_role_display }}
+          </span>
+        </div>
+      </div>
+      <div class="col-md-6 mt-3 mt-md-0">
+        <div class="row text-center">
+          <div class="col-4">
+            <div class="metric-card bg-white p-3 rounded-3">
+              <h6 class="text-uppercase text-muted mb-2">Feedback</h6>
+              <h3 class="mb-0 text-dark">{{ feedbacks_count }}</h3>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="metric-card bg-white p-3 rounded-3">
+              <h6 class="text-uppercase text-muted mb-2">Responses</h6>
+              <h3 class="mb-0 text-dark">{{ total_responses }}</h3>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="metric-card bg-white p-3 rounded-3">
+              <h6 class="text-uppercase text-muted mb-2">Unread</h6>
+              <span class="badge bg-warning text-dark">{{ unread_notifications }} New</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="row">
+    <!-- Feedback Column -->
+    <div class="col-lg-8 mb-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white border-0 pb-0">
+          <div class="d-flex justify-content-between align-items-center">
+            <h3 class="h5 mb-0">
+              <i class="fas fa-comment-alt text-primary me-2"></i>Recent Feedback
+            </h3>
+            <a href="{% url 'feedback:feedback-list' %}" class="btn btn-sm btn-outline-primary">
+              View All <i class="fas fa-arrow-right ms-1"></i>
+            </a>
+          </div>
+        </div>
+        <div class="card-body">
+          {% if feedback_data %}
+            <div class="list-group list-group-flush">
+              {% for item in feedback_data %}
+                <div class="list-group-item border-0 px-0 py-3 feedback-card category-{{ item.feedback.category|lower }} animate__animated animate__fadeInUp">
+                  <div class="d-flex justify-content-between mb-2">
+                    <span class="badge bg-{{ item.feedback.category|lower }}-subtle text-{{ item.feedback.category|lower }}-emphasis">
+                      {{ item.feedback.category }}
+                    </span>
+                    <small class="text-muted">{{ item.feedback.created_at|timesince }} ago</small>
+                  </div>
+                  <p class="mb-3">{{ item.feedback.content|truncatewords:30 }}</p>
+                  
+                  {% if item.feedback.attachments.exists %}
+                    <div class="mb-3">
+                      {% for attachment in item.feedback.attachments.all %}
+                        <span class="badge bg-light text-dark attachment-badge">
+                          <i class="fas fa-paperclip me-1"></i>
+                          {{ attachment.file.name|truncatechars:20 }}
+                        </span>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                  
+                  <div class="d-flex align-items-center mb-3">
+                    <div class="text-warning me-2">
+                      {% for i in "12345" %}
+                        {% if forloop.counter <= item.feedback.rating %}
+                          <i class="fas fa-star"></i>
+                        {% else %}
+                          <i class="far fa-star"></i>
+                        {% endif %}
+                      {% endfor %}
+                    </div>
+                    <span class="text-muted small">{{ item.feedback.rating }}/5 rating</span>
+                  </div>
+
+                  {% if item.responses %}
+                    <div class="bg-light p-3 rounded-3">
+                      <h6 class="d-flex align-items-center mb-3">
+                        <i class="fas fa-reply text-muted me-2"></i>
+                        <span>Latest Response</span>
+                      </h6>
+                      <div class="d-flex">
+                        <div class="flex-shrink-0">
+                          <i class="fas fa-user-circle text-muted fs-4"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                          <p class="mb-1">{{ item.responses.0.content|truncatewords:20 }}</p>
+                          <small class="text-muted">
+                            {{ item.responses.0.created_at|date:"M j, g:i a" }}
+                            by {{ item.responses.0.responder.username }}
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-center py-5 empty-state">
+              <i class="fas fa-comment-slash fs-1 text-muted mb-3"></i>
+              <h5 class="text-muted">No feedback submitted yet</h5>
+              <p class="text-muted">Your feedback helps us improve our services</p>
+              {% if user.role == 'Patient' %}
+                <a href="{% url 'feedback:feedback-create' %}" class="btn btn-primary mt-2">
+                  <i class="fas fa-plus me-1"></i> Submit Feedback
+                </a>
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Notifications Column -->
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white border-0">
+          <div class="d-flex justify-content-between align-items-center">
+            <h3 class="h5 mb-0">
+              <i class="fas fa-bell text-warning me-2"></i>Notifications
+            </h3>
+            <span class="badge bg-warning text-dark">{{ notifications.count }} New</span>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          {% if notifications %}
+            <div class="list-group list-group-flush">
+              {% for notification in notifications %}
+                <a href="{% url 'feedback:notification-detail' notification.id %}" 
+                   class="list-group-item list-group-item-action border-0 py-3 notification-item {% if not notification.read %}bg-light{% endif %}"
+                   data-notification-id="{{ notification.id }}">
+                  <div class="d-flex">
+                    <div class="flex-shrink-0 text-primary me-3">
+                      <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-1">
+                          {% if notification.feedback %}
+                            New {{ notification.feedback.category }}
+                          {% else %}
+                            Notification
+                          {% endif %}
+                        </h6>
+                        {% if notification.status == 'Unread' %}<span class="notification-dot"></span>{% endif %}
+                      </div>
+                      <p class="small mb-1">{{ notification.message|truncatewords:15 }}</p>
+                      <small class="text-muted">{{ notification.timestamp|timesince }} ago</small>
+                    </div>
+                  </div>
+                </a>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-center py-5 empty-state">
+              <i class="fas fa-bell-slash fs-1 text-muted mb-3"></i>
+              <h5 class="text-muted">No notifications</h5>
+              <p class="text-muted">We'll notify you when there's activity</p>
+            </div>
+          {% endif %}
+        </div>
+        <div class="card-footer bg-white border-0 text-center">
+          <a href="{% url 'feedback:notification-list' %}" class="btn btn-sm btn-outline-secondary">
+            View All Notifications
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/dashboard.js' %}"></script>
+{% endblock %}

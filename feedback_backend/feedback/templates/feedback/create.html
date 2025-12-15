@@ -1,0 +1,281 @@
+{% extends 'base.html' %}
+{% load static i18n %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white border-bottom-0">
+          <h2 class="h4 mb-0 text-center">
+            <i class="fas fa-comment-alt me-2 text-primary"></i>
+            {% trans "Submit Feedback" %}
+          </h2>
+        </div>
+        
+        <div class="card-body">
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+
+          <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
+            {% csrf_token %}
+            
+            <!-- Content Field -->
+            <div class="mb-4">
+              <label for="id_content" class="form-label">
+                {% trans "Feedback" %} <span class="text-danger">*</span>
+              </label>
+              <textarea class="form-control {% if form.content.errors %}is-invalid{% endif %}" 
+                        id="id_content" name="content" rows="4" required>{{ form.content.value|default:'' }}</textarea>
+              <div class="form-text">
+                <i class="fas fa-info-circle me-1"></i>
+                {% trans "Please provide detailed feedback about your experience" %}
+              </div>
+              {% if form.content.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ form.content.errors.0 }}
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Rating Field -->
+            <div class="mb-4">
+              <label class="form-label">
+                {% trans "Rating" %} <span class="text-danger">*</span>
+              </label>
+              <input type="hidden" name="rating" id="id_rating" value="{{ form.rating.value|default:'0' }}" required>
+              <div class="rating-container d-flex gap-3 mb-2">
+                {% for i in "12345" %}
+                  <div class="form-check">
+                    <input class="form-check-input rating-input" 
+                           type="radio" 
+                           name="rating_display" 
+                           id="rating{{ i }}" 
+                           value="{{ i }}"
+                           {% if form.rating.value == i|add:"0" %}checked{% endif %}>
+                    <label class="form-check-label rating-label" for="rating{{ i }}">
+                      <span class="star-icon">★</span> {{ i }}
+                    </label>
+                  </div>
+                {% endfor %}
+              </div>
+              <div class="form-text mb-2">
+                <i class="fas fa-info-circle me-1"></i>
+                {% trans "Select a rating from 1 (poor) to 5 (excellent)" %}
+              </div>
+              {% if form.rating.errors %}
+                <div class="alert alert-danger py-2">
+                  {{ form.rating.errors.0 }}
+                </div>
+              {% endif %}
+              <div class="invalid-feedback" id="rating-error" style="display: none;">
+                {% trans "Please select a rating" %}
+              </div>
+            </div>
+
+            <!-- Category Field -->
+            <div class="mb-4">
+              <label for="id_category" class="form-label">
+                {% trans "Category" %} <span class="text-danger">*</span>
+              </label>
+              <select class="form-select {% if form.category.errors %}is-invalid{% endif %}" 
+                      id="id_category" name="category" required>
+                <option value="">{% trans "Select a category" %}</option>
+                {% for value, text in form.category.field.choices %}
+                  <option value="{{ value }}" {% if form.category.value == value %}selected{% endif %}>
+                    {{ text }}
+                  </option>
+                {% endfor %}
+              </select>
+              {% if form.category.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ form.category.errors.0 }}
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Attachments Field -->
+            <div class="mb-4">
+              <label for="id_attachments" class="form-label">
+                {% trans "Attachments" %}
+              </label>
+              <input type="file" class="form-control {% if form.attachments.errors %}is-invalid{% endif %}" 
+                     id="id_attachments" name="attachments" 
+                     multiple accept=".pdf,.jpg,.jpeg,.png">
+              <div class="form-text">
+                <i class="fas fa-info-circle me-1"></i>
+                {% trans "Maximum file size: 5MB per file. Allowed formats: PDF, JPG, PNG" %}
+              </div>
+              <div id="file-list" class="mt-2"></div>
+              {% if form.attachments.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ form.attachments.errors.0 }}
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Form Actions -->
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+              <a href="{% url 'feedback:feedback-list' %}" class="btn btn-outline-secondary me-md-2">
+                <i class="fas fa-times me-1"></i>
+                {% trans "Cancel" %}
+              </a>
+              <button type="submit" class="btn btn-primary" id="submit-btn">
+                <i class="fas fa-paper-plane me-1"></i>
+                {% trans "Submit Feedback" %}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .rating-input {
+    position: absolute;
+    opacity: 0;
+  }
+  
+  .rating-label {
+    cursor: pointer;
+    font-size: 1.5rem;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  
+  .star-icon {
+    color: #ddd;
+    transition: color 0.2s ease;
+  }
+  
+  .rating-input:checked ~ .rating-label .star-icon,
+  .rating-input:checked + .rating-label .star-icon {
+    color: #ffc107;
+  }
+  
+  .rating-label:hover .star-icon {
+    color: #ffc107;
+    transform: scale(1.1);
+  }
+  
+  .form-check:has(.rating-input:checked) .rating-label {
+    font-weight: bold;
+  }
+  
+  .form-check:has(.rating-input:checked) .star-icon {
+    color: #ffc107;
+  }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.querySelector('.needs-validation');
+  const ratingInputs = document.querySelectorAll('.rating-input');
+  const hiddenRating = document.getElementById('id_rating');
+  const fileInput = document.getElementById('id_attachments');
+  const fileList = document.getElementById('file-list');
+  const submitBtn = document.getElementById('submit-btn');
+  const ratingError = document.getElementById('rating-error');
+  
+  // Handle star rating selection
+  ratingInputs.forEach(input => {
+    input.addEventListener('change', function() {
+      hiddenRating.value = this.value;
+      ratingError.style.display = 'none';
+      
+      // Update all stars up to selected rating
+      ratingInputs.forEach((inp, idx) => {
+        const star = inp.nextElementSibling.querySelector('.star-icon');
+        if (parseInt(inp.value) <= parseInt(this.value)) {
+          star.style.color = '#ffc107';
+        } else {
+          star.style.color = '#ddd';
+        }
+      });
+    });
+  });
+
+  // File input handling
+  if (fileInput) {
+    fileInput.addEventListener('change', function(e) {
+      fileList.innerHTML = '';
+      const files = Array.from(e.target.files);
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      let hasError = false;
+      
+      files.forEach((file, index) => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'alert alert-info py-2 px-3 d-flex justify-content-between align-items-center';
+        
+        if (file.size > maxSize) {
+          fileItem.className = 'alert alert-danger py-2 px-3';
+          fileItem.innerHTML = `
+            <span><i class="fas fa-exclamation-triangle me-2"></i>${file.name} - {% trans "Exceeds 5MB" %}</span>
+          `;
+          hasError = true;
+        } else {
+          const sizeKB = (file.size / 1024).toFixed(2);
+          fileItem.innerHTML = `
+            <span><i class="fas fa-file me-2"></i>${file.name} (${sizeKB} KB)</span>
+            <i class="fas fa-check-circle text-success"></i>
+          `;
+        }
+        
+        fileList.appendChild(fileItem);
+      });
+      
+      if (hasError) {
+        submitBtn.disabled = true;
+        setTimeout(() => {
+          alert('{% trans "Please remove files that exceed the 5MB limit" %}');
+          e.target.value = '';
+          fileList.innerHTML = '';
+          submitBtn.disabled = false;
+        }, 100);
+      }
+    });
+  }
+
+  // Form validation
+  form.addEventListener('submit', function(event) {
+    let isValid = true;
+    
+    // Check rating
+    if (!hiddenRating.value || hiddenRating.value === '0') {
+      event.preventDefault();
+      event.stopPropagation();
+      ratingError.style.display = 'block';
+      isValid = false;
+    }
+    
+    // Check form validity
+    if (!form.checkValidity()) {
+      event.preventDefault();
+      event.stopPropagation();
+      isValid = false;
+    }
+    
+    form.classList.add('was-validated');
+    
+    if (isValid) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>{% trans "Submitting..." %}';
+    }
+  }, false);
+});
+</script>
+{% endblock %}

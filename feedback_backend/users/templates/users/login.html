@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% load static i18n %}
+
+{% block title %}{% trans "Login" %}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <img src="{% static 'images/logo.png' %}" alt="Logo" height="50" class="mb-3">
+                        <h2 class="h4">{% trans "Sign in to your account" %}</h2>
+                        {% if not form.errors %}
+                        <p class="text-muted">
+                            {% trans "Enter your email or username and password to login" %}
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    {% if form.errors %}
+                    <div class="alert alert-danger" role="alert">
+                        <strong>{% trans "Error:" %}</strong>
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% empty %}
+                            {% trans "Please enter a correct email/username and password." %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ next }}">
+
+                        <div class="mb-3">
+                            <label for="{{ form.username.id_for_label }}" class="form-label">
+                                {% trans "Email or Username" %}
+                            </label>
+                            <input type="text" 
+                                   name="{{ form.username.name }}" 
+                                   id="{{ form.username.id_for_label }}"
+                                   class="form-control {% if form.username.errors %}is-invalid{% endif %}"
+                                   value="{% if form.username.value %}{{ form.username.value }}{% endif %}"
+                                   required
+                                   autofocus>
+                            {% if form.username.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.username.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <label for="{{ form.password.id_for_label }}" class="form-label">
+                                    {% trans "Password" %}
+                                </label>
+                                <a href="{% url 'users:password_reset' %}" class="small text-decoration-none">
+                                    {% trans "Forgot password?" %}
+                                </a>
+                            </div>
+                            <input type="password" 
+                                   name="{{ form.password.name }}" 
+                                   id="{{ form.password.id_for_label }}"
+                                   class="form-control {% if form.password.errors %}is-invalid{% endif %}"
+                                   required>
+                            {% if form.password.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.password.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="rememberMe" name="remember_me">
+                            <label class="form-check-label" for="rememberMe">{% trans "Remember me" %}</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-2 mb-3">
+                            {% trans "Sign in" %}
+                        </button>
+
+                        <div class="text-center">
+                            <p class="small text-muted">
+                                {% trans "Don't have an account?" %}
+                                <a href="{% url 'users:register' %}" class="text-decoration-none">
+                                    {% trans "Sign up" %}
+                                </a>
+                            </p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Debug CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (!csrfToken) {
+        console.error('CSRF token missing from form!');
+    } else {
+        console.log('CSRF token present:', csrfToken.value);
+    }
+
+    // Auto-focus username field
+    const usernameField = document.getElementById('{{ form.username.id_for_label }}');
+    if (usernameField && !usernameField.value) {
+        usernameField.focus();
+    }
+    
+    // Password visibility toggle
+    const passwordField = document.getElementById('{{ form.password.id_for_label }}');
+    if (passwordField) {
+        const togglePassword = document.createElement('span');
+        togglePassword.innerHTML = '👁️';
+        togglePassword.style.cssText = `
+            cursor: pointer;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 5;
+        `;
+        
+        passwordField.parentElement.style.position = 'relative';
+        passwordField.parentElement.appendChild(togglePassword);
+        
+        togglePassword.addEventListener('click', function() {
+            const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordField.setAttribute('type', type);
+        });
+    }
+});
+</script>
+{% endblock %}

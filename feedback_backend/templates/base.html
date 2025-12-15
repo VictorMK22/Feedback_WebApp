@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="{{ user.profile.preferred_language|default:'en' }}" 
+      data-font-size="{{ user.profile.font_size|default:'medium' }}" 
+      data-bs-theme="{{ user.profile.dark_mode|yesno:'dark,light' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Health Portal{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --base-font-size: 16px;
+        }
+        
+        body {
+            font-size: var(--base-font-size);
+            transition: all 0.3s ease;
+            padding-top: 56px;
+        }
+        
+        /* Responsive font sizes */
+        h1 { font-size: calc(var(--base-font-size) * 2); }
+        h2 { font-size: calc(var(--base-font-size) * 1.8); }
+        h3 { font-size: calc(var(--base-font-size) * 1.6); }
+        
+        /* Dark mode overrides Bootstrap's dark theme */
+        [data-bs-theme="dark"] {
+            --bs-body-color: #dee2e6;
+            --bs-body-bg: #212529;
+            --bs-tertiary-bg: #343a40;
+            
+            .navbar-dark {
+                background-color: #1a1e21 !important;
+            }
+            
+            .card {
+                background-color: #2c3034;
+                border-color: #495057;
+            }
+        }
+        
+        /* Toast positioning */
+        #toastContainer {
+            z-index: 1100;
+        }
+    </style>
+
+    {% load static %}
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'feedback:home-dashboard' %}">
+                <i class="fas fa-heartbeat me-2"></i>Feedback App Portal
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="mainNavbar">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i> {% if user.is_authenticated %}{{ user.username }}{% else %}Guest{% endif %}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            {% if user.is_authenticated %}
+                                <li><a class="dropdown-item" href="{% url 'users:profile' %}">
+                                    <i class="fas fa-user me-2"></i> Profile
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#settingsModal">
+                                    <i class="fas fa-cog me-2"></i> Settings
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="post" action="{% url 'users:logout' %}" class="px-3 py-1">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-link dropdown-item p-0 text-start w-100">
+                                            <i class="fas fa-sign-out-alt me-2"></i> Logout
+                                        </button>
+                                    </form>
+                                </li>
+                            {% else %}
+                                <li><a class="dropdown-item" href="{% url 'users:login' %}">
+                                    <i class="fas fa-sign-in-alt me-2"></i> Login
+                                </a></li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mt-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Include components -->
+    {% include 'includes/settings_modal.html' %}
+    {% include 'includes/toast_notifications.html' %}
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    {% if user.is_authenticated %}
+    <script src="{% static 'js/dashboard.js' %}"></script>
+    {% endif %}
+    
+    <!-- Initialize settings on page load -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Bootstrap components
+        const dropdownElements = document.querySelectorAll('.dropdown-toggle');
+        dropdownElements.forEach(el => {
+            new bootstrap.Dropdown(el);
+        });
+
+        // Load user settings from server
+        if (typeof loadUserSettings === 'function') {
+            loadUserSettings();
+        }
+    });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
